@@ -33,6 +33,13 @@ struct MenuView: View {
                 }
                 .disabled(!onkyo.powerOn)
                 .opacity(onkyo.powerOn ? 1 : 0.4)
+                if onkyo.powerOn && !onkyo.audioInfo.isEmpty {
+                    Text(onkyo.audioInfo)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity)
+                }
             } else {
                 disconnectedState
                     .frame(maxWidth: .infinity)

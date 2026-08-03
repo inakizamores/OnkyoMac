@@ -56,11 +56,15 @@ final class OnkyoSystem {
     var trackTime = ""
     var isPlaying = false
     var artwork: NSImage?
+    var audioInfo = ""
     var model = ""
     var isScanning = false
     var launchAtLogin = LoginItem.isEnabled
 
     @ObservationIgnored private var artHex = ""
+    @ObservationIgnored private var scrollMonitor: Any?
+    @ObservationIgnored private var scrollAccum: CGFloat = 0
+    @ObservationIgnored private var idleDisconnect: Task<Void, Never>?
 
     @ObservationIgnored private let conn = EISCPConnection()
     @ObservationIgnored private var menuIsOpen = false
@@ -89,6 +93,17 @@ final class OnkyoSystem {
         if let saved = UserDefaults.standard.string(forKey: "receiverModel") {
             model = saved
         }
+        // Horizontal scroll over the menu bar icon adjusts volume.
+        scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
+            guard let window = event.window, window.className.contains("StatusBar") else {
+                return event
+            }
+            let dx = event.hasPreciseScrollingDeltas
+                ? event.scrollingDeltaX
+                : event.scrollingDeltaX * 8
+            MainActor.assumeIsolated { self?.handleScroll(dx) }
+            return nil
+        }
     }
 
     // MARK: - Lifecycle
@@ -96,7 +111,10 @@ final class OnkyoSystem {
     func menuOpened() {
         menuIsOpen = true
         reconnectAttempted = false
-        if let ip = knownIP {
+        idleDisconnect?.cancel()
+        if conn.isConnected {
+            queryAll()
+        } else if let ip = knownIP {
             conn.connect(host: ip)
         } else {
             Task { await discoverAndConnect() }
@@ -129,9 +147,31 @@ final class OnkyoSystem {
 
     private func queryAll() {
         for q in ["PWRQSTN", "MVLQSTN", "AMTQSTN", "SLIQSTN", "ECNQSTN",
-                  "HDOQSTN", "LMDQSTN", "NSTQSTN", "NTIQSTN", "NATQSTN"] {
+                  "HDOQSTN", "LMDQSTN", "NSTQSTN", "NTIQSTN", "NATQSTN", "IFAQSTN"] {
             conn.send(q)
         }
+    }
+
+    /// The format info lags input/mode switches — re-ask once things settle.
+    private func requeryAudioInfo() {
+        Task {
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            conn.send("IFAQSTN")
+        }
+    }
+
+    /// IFA: "source,codec,rate,in-ch,mode,out-ch,…" → "codec → mode · out-ch"
+    static func formatAudioInfo(_ value: String) -> String {
+        let f = value.components(separatedBy: ",").map {
+            $0.trimmingCharacters(in: .whitespaces)
+        }
+        func field(_ i: Int) -> String { i < f.count ? f[i] : "" }
+        var result = ""
+        let codec = field(1), mode = field(4), out = field(5)
+        if !codec.isEmpty { result = codec }
+        if !mode.isEmpty { result += result.isEmpty ? mode : " → \(mode)" }
+        if !out.isEmpty { result += result.isEmpty ? out : " · \(out)" }
+        return result
     }
 
     // MARK: - Incoming state (receiver pushes changes)
@@ -154,11 +194,15 @@ final class OnkyoSystem {
                 inputCode = value
                 trackTitle = ""; trackArtist = ""; trackTime = ""
                 artwork = nil; artHex = ""
+                requeryAudioInfo()
             }
         case "HDO":
             hdmiOut = value
         case "LMD":
             listeningMode = value
+            requeryAudioInfo()
+        case "IFA":
+            audioInfo = Self.formatAudioInfo(value)
         case "NTI":
             trackTitle = value
         case "NAT":
@@ -244,6 +288,31 @@ final class OnkyoSystem {
 
     func nextTrack() { conn.send("NTCTRUP") }
     func previousTrack() { conn.send("NTCTRDN") }
+
+    /// Menu-bar-icon scroll → MVLUP/MVLDOWN steps. Works with the panel
+    /// closed: connects on demand, then idles the connection back out.
+    private func handleScroll(_ deltaX: CGFloat) {
+        if !conn.isConnected, let ip = knownIP {
+            conn.connect(host: ip)
+        }
+        scrollAccum += deltaX
+        let step: CGFloat = 5
+        while scrollAccum >= step {
+            scrollAccum -= step
+            conn.send("MVLUP")
+        }
+        while scrollAccum <= -step {
+            scrollAccum += step
+            conn.send("MVLDOWN")
+        }
+        idleDisconnect?.cancel()
+        idleDisconnect = Task {
+            try? await Task.sleep(nanoseconds: 30_000_000_000)
+            guard !Task.isCancelled, !self.menuIsOpen else { return }
+            self.conn.disconnect()
+            self.connected = false
+        }
+    }
 
     func setLaunchAtLogin(_ on: Bool) {
         LoginItem.set(on)
