@@ -40,7 +40,7 @@ When macOS asks for **Local Network** access, click **Allow** — that's how Onk
 - 📺 **HDMI output routing** — switch between Main, Sub, or Main + Sub outputs (TV vs. projector)
 - 🎵 **Now Playing** — title, artist, album art and live progress for Network/Bluetooth/USB sources, with play/pause/skip
 - 🔊 **Sound modes** — Stereo, Direct, All Ch Stereo, Full Mono, Dolby Surround, DTS Neural:X
-- 🖱️ **Scroll to adjust** — swipe horizontally on the menu bar icon to change volume, no click needed
+- 🖱️ **Swipe to adjust** — scroll horizontally on the volume bar for smooth, damped changes that can't accidentally jump the level
 - ℹ️ **Format readout** — a subtle line showing the incoming codec, active sound mode and output channels
 - 🚀 **Start at Login** — lives quietly in the menu bar, ready before you are
 
