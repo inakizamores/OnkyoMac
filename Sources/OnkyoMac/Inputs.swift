@@ -49,7 +49,8 @@ struct OnkyoMode: Identifiable, Hashable {
         OnkyoMode(code: "00", name: "Stereo"),
         OnkyoMode(code: "01", name: "Direct"),
         OnkyoMode(code: "0C", name: "All Ch Stereo"),
-        OnkyoMode(code: "0D", name: "Full Mono"),
+        OnkyoMode(code: "0D", name: "Theater-Dimensional"),
+        OnkyoMode(code: "13", name: "Full Mono"),
         OnkyoMode(code: "80", name: "Dolby Surround"),
         OnkyoMode(code: "82", name: "DTS Neural:X"),
     ]
