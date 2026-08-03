@@ -63,12 +63,11 @@ struct MenuView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 8) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text("Onkyo")
-                .font(.system(.body, weight: .bold))
+                .font(.title3.weight(.bold))
             if !onkyo.model.isEmpty {
                 Text(onkyo.model)
-                    .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -148,8 +147,6 @@ struct MenuView: View {
                            options: [(String, String)]) -> some View {
         HStack {
             Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
             Spacer()
             Picker(label, selection: selection) {
                 ForEach(options, id: \.0) { code, name in
@@ -169,8 +166,6 @@ struct MenuView: View {
     private var inputRow: some View {
         HStack {
             Text("Input")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
             Spacer()
             Picker("Input", selection: Binding(
                 get: { onkyo.inputCode },
