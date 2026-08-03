@@ -60,6 +60,8 @@ final class OnkyoSystem {
     var model = ""
     var isScanning = false
     var launchAtLogin = LoginItem.isEnabled
+    var everConnected = UserDefaults.standard.string(forKey: "receiverIP") != nil
+    var connectionFailed = false
 
     @ObservationIgnored private var artHex = ""
 
@@ -81,6 +83,8 @@ final class OnkyoSystem {
             self.connected = up
             if up {
                 self.reconnectAttempted = false
+                self.connectionFailed = false
+                self.everConnected = true
                 self.queryAll()
             } else if self.menuIsOpen, !self.reconnectAttempted {
                 self.reconnectAttempted = true
@@ -90,6 +94,28 @@ final class OnkyoSystem {
         if let saved = UserDefaults.standard.string(forKey: "receiverModel") {
             model = saved
         }
+        restoreState()
+    }
+
+    /// Last-known receiver state, so the panel renders populated instantly
+    /// instead of flashing an empty layout while the connection comes up.
+    private func restoreState() {
+        guard let s = UserDefaults.standard.dictionary(forKey: "lastState") else { return }
+        powerOn = s["powerOn"] as? Bool ?? false
+        volume = s["volume"] as? Int ?? 0
+        muted = s["muted"] as? Bool ?? false
+        inputCode = s["input"] as? String ?? ""
+        hdmiOut = s["hdmiOut"] as? String ?? ""
+        listeningMode = s["mode"] as? String ?? ""
+        audioInfo = s["audioInfo"] as? String ?? ""
+    }
+
+    private func persistState() {
+        UserDefaults.standard.set([
+            "powerOn": powerOn, "volume": volume, "muted": muted,
+            "input": inputCode, "hdmiOut": hdmiOut, "mode": listeningMode,
+            "audioInfo": audioInfo,
+        ] as [String: Any], forKey: "lastState")
     }
 
     // MARK: - Lifecycle
@@ -108,6 +134,7 @@ final class OnkyoSystem {
 
     func menuClosed() {
         menuIsOpen = false
+        persistState()
         conn.disconnect()
         connected = false
     }
@@ -119,9 +146,13 @@ final class OnkyoSystem {
     private func discoverAndConnect() async {
         guard !isScanning else { return }
         isScanning = true
+        connectionFailed = false
         defer { isScanning = false }
         let found = await OnkyoDiscovery.discover()
-        guard let first = found.first else { return }
+        guard let first = found.first else {
+            if menuIsOpen { connectionFailed = true }
+            return
+        }
         knownIP = first.ip
         if !first.model.isEmpty {
             model = first.model

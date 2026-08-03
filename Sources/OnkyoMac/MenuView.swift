@@ -3,10 +3,18 @@ import SwiftUI
 struct MenuView: View {
     @Environment(OnkyoSystem.self) private var onkyo
 
+    /// Show the populated controls whenever we know the receiver — even
+    /// while the connection is still coming up — so opening the panel
+    /// never flashes an empty layout. The empty state is reserved for
+    /// first-run and genuine connection failure.
+    private var showControls: Bool {
+        onkyo.everConnected && !onkyo.connectionFailed
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
-            if onkyo.connected {
+            if showControls {
                 CapsuleSlider(
                     value: Binding(
                         get: { Double(onkyo.volume) },
@@ -64,7 +72,7 @@ struct MenuView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            if onkyo.connected {
+            if showControls {
                 Button { onkyo.togglePower() } label: {
                     Image(systemName: "power")
                         .fontWeight(.semibold)
