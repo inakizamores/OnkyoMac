@@ -62,6 +62,17 @@ final class OnkyoSystem {
     var launchAtLogin = LoginItem.isEnabled
     var everConnected = UserDefaults.standard.string(forKey: "receiverIP") != nil
     var connectionFailed = false
+    var inputs: [OnkyoInput] = OnkyoInput.common
+
+    /// Transport/now-playing only applies to the receiver's own streaming
+    /// sources — not passthrough inputs like STRM BOX or TV.
+    var hasTransport: Bool {
+        ["2B", "2E", "29", "27", "28", "2A"].contains(inputCode)
+    }
+
+    func inputName(_ code: String) -> String {
+        inputs.first(where: { $0.code == code })?.name ?? "Input \(code)"
+    }
 
     @ObservationIgnored private var artHex = ""
 
@@ -93,6 +104,11 @@ final class OnkyoSystem {
         }
         if let saved = UserDefaults.standard.string(forKey: "receiverModel") {
             model = saved
+        }
+        if let data = UserDefaults.standard.data(forKey: "inputList"),
+           let saved = try? JSONDecoder().decode([OnkyoInput].self, from: data),
+           !saved.isEmpty {
+            inputs = saved
         }
         restoreState()
     }
@@ -140,6 +156,8 @@ final class OnkyoSystem {
     }
 
     func rescan() {
+        UserDefaults.standard.removeObject(forKey: "inputList")
+        if conn.isConnected { conn.send("NRIQSTN") }
         Task { await discoverAndConnect() }
     }
 
@@ -165,6 +183,11 @@ final class OnkyoSystem {
         for q in ["PWRQSTN", "MVLQSTN", "AMTQSTN", "SLIQSTN", "ECNQSTN",
                   "HDOQSTN", "LMDQSTN", "NSTQSTN", "NTIQSTN", "NATQSTN", "IFAQSTN"] {
             conn.send(q)
+        }
+        // Ask the receiver for its own input list (with custom names) once;
+        // Rescan clears the cache to pick up renames.
+        if UserDefaults.standard.data(forKey: "inputList") == nil {
+            conn.send("NRIQSTN")
         }
     }
 
@@ -245,6 +268,14 @@ final class OnkyoSystem {
             if let s = value.first { isPlaying = "PFR".contains(s) }
         case "NJA":
             handleArt(value)
+        case "NRI":
+            let parsed = SelectorParser.parse(value)
+            if !parsed.isEmpty {
+                inputs = parsed
+                if let data = try? JSONEncoder().encode(parsed) {
+                    UserDefaults.standard.set(data, forKey: "inputList")
+                }
+            }
         case "ECN":
             if let m = value.split(separator: "/").first, !m.isEmpty {
                 model = String(m)

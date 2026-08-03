@@ -25,7 +25,7 @@ struct MenuView: View {
                 )
                 .disabled(!onkyo.powerOn)
                 .opacity(onkyo.powerOn ? 1 : 0.4)
-                if onkyo.powerOn && !onkyo.trackTitle.isEmpty {
+                if onkyo.powerOn && onkyo.hasTransport && !onkyo.trackTitle.isEmpty {
                     nowPlaying
                 }
                 Group {
@@ -176,12 +176,12 @@ struct MenuView: View {
                 get: { onkyo.inputCode },
                 set: { onkyo.setInput($0) }
             )) {
-                ForEach(OnkyoInput.common) { input in
+                ForEach(onkyo.inputs) { input in
                     Text(input.name).tag(input.code)
                 }
                 if !onkyo.inputCode.isEmpty,
-                   !OnkyoInput.common.contains(where: { $0.code == onkyo.inputCode }) {
-                    Text(OnkyoInput.name(for: onkyo.inputCode)).tag(onkyo.inputCode)
+                   !onkyo.inputs.contains(where: { $0.code == onkyo.inputCode }) {
+                    Text(onkyo.inputName(onkyo.inputCode)).tag(onkyo.inputCode)
                 }
             }
             .pickerStyle(.menu)
