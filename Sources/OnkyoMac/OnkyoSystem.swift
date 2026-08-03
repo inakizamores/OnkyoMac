@@ -168,6 +168,19 @@ final class OnkyoSystem {
         }
     }
 
+    /// A receiver restores its own startup volume/input/mode while booting
+    /// and answers "N/A" until ready — re-query the full state a few times
+    /// across the boot window so the panel converges on the real values.
+    private func requeryAfterPowerOn() {
+        Task {
+            for delay: UInt64 in [1, 3, 6] {
+                try? await Task.sleep(nanoseconds: delay * 1_000_000_000)
+                guard conn.isConnected else { return }
+                queryAll()
+            }
+        }
+    }
+
     /// The format info lags input/mode switches — re-ask once things settle.
     private func requeryAudioInfo() {
         Task {
@@ -198,7 +211,10 @@ final class OnkyoSystem {
         let value = String(message.dropFirst(3))
         switch cmd {
         case "PWR":
-            powerOn = value == "01"
+            let on = value == "01"
+            let turnedOn = on && !powerOn
+            powerOn = on
+            if turnedOn { requeryAfterPowerOn() }
         case "MVL":
             if Date() >= suppressVolumeUntil, let v = Int(value, radix: 16) {
                 volume = min(100, v)
@@ -279,7 +295,9 @@ final class OnkyoSystem {
 
     func togglePower() {
         powerOn.toggle()
+        reconnectAttempted = false   // wake can reset the TCP session
         conn.send(powerOn ? "PWR01" : "PWR00")
+        if powerOn { requeryAfterPowerOn() }
     }
 
     func setInput(_ code: String) {
