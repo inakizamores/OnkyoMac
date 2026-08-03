@@ -25,3 +25,36 @@ struct OnkyoInput: Identifiable, Hashable {
         common.first(where: { $0.code == code })?.name ?? "Input \(code)"
     }
 }
+
+/// HDMI output routing (HDO).
+struct OnkyoOutput: Identifiable, Hashable {
+    let code: String
+    let name: String
+    var id: String { code }
+
+    static let all: [OnkyoOutput] = [
+        OnkyoOutput(code: "01", name: "Main"),
+        OnkyoOutput(code: "02", name: "Sub"),
+        OnkyoOutput(code: "03", name: "Main + Sub"),
+    ]
+}
+
+/// Listening modes (LMD) — curated standard codes.
+struct OnkyoMode: Identifiable, Hashable {
+    let code: String
+    let name: String
+    var id: String { code }
+
+    static let common: [OnkyoMode] = [
+        OnkyoMode(code: "00", name: "Stereo"),
+        OnkyoMode(code: "01", name: "Direct"),
+        OnkyoMode(code: "0C", name: "All Ch Stereo"),
+        OnkyoMode(code: "0D", name: "Full Mono"),
+        OnkyoMode(code: "80", name: "Dolby Surround"),
+        OnkyoMode(code: "82", name: "DTS Neural:X"),
+    ]
+
+    static func name(for code: String) -> String {
+        common.first(where: { $0.code == code })?.name ?? "Mode \(code)"
+    }
+}
