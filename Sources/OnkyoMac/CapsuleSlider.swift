@@ -36,6 +36,9 @@ struct CapsuleSlider: View {
                 }
             }
             .contentShape(Rectangle())
+            // Scroll steps and receiver pushes glide to the new level;
+            // finger drags track 1:1 with no animation lag.
+            .animation(isDragging ? nil : .smooth(duration: 0.25), value: value)
             .background(ScrollCatcher { dx in handleScroll(dx) })
             .gesture(
                 DragGesture(minimumDistance: 0)
