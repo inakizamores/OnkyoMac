@@ -65,7 +65,7 @@ struct MenuView: View {
     private var header: some View {
         HStack(spacing: 8) {
             Text("Onkyo")
-                .font(.system(.body, weight: .bold))
+                .font(.system(.body, weight: .semibold))
             if !onkyo.model.isEmpty {
                 Text(onkyo.model)
                     .font(.subheadline)
