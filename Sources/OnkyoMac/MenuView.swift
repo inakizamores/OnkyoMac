@@ -20,7 +20,7 @@ struct MenuView: View {
                         get: { Double(onkyo.volume) },
                         set: { onkyo.setVolume(Int($0.rounded())) }
                     ),
-                    icon: onkyo.muted ? "speaker.slash.fill" : "speaker.fill",
+                    icon: CapsuleSlider.speakerIcon(onkyo.volume, muted: onkyo.muted),
                     onIconTap: { onkyo.toggleMute() }
                 )
                 .disabled(!onkyo.powerOn)
