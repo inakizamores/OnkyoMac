@@ -151,28 +151,43 @@ struct MenuView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
-            Picker(label, selection: selection) {
-                ForEach(options, id: \.0) { code, name in
-                    Text(name).tag(code)
+            if isScreenshotting {
+                fakePopup(options.first(where: { $0.0 == selection.wrappedValue })?.1
+                          ?? selection.wrappedValue)
+            } else {
+                Picker(label, selection: selection) {
+                    ForEach(options, id: \.0) { code, name in
+                        Text(name).tag(code)
+                    }
+                    if !selection.wrappedValue.isEmpty,
+                       !options.contains(where: { $0.0 == selection.wrappedValue }) {
+                        Text(selection.wrappedValue).tag(selection.wrappedValue)
+                    }
                 }
-                if !selection.wrappedValue.isEmpty,
-                   !options.contains(where: { $0.0 == selection.wrappedValue }) {
-                    Text(selection.wrappedValue).tag(selection.wrappedValue)
-                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .fixedSize()
             }
-            .pickerStyle(.menu)
-            .labelsHidden()
-            .fixedSize()
         }
     }
 
+    @ViewBuilder
     private var inputRow: some View {
         HStack {
             Text("Input")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
-            Picker("Input", selection: Binding(
+            if isScreenshotting {
+                fakePopup(onkyo.inputName(onkyo.inputCode))
+            } else {
+                inputPicker
+            }
+        }
+    }
+
+    private var inputPicker: some View {
+        Picker("Input", selection: Binding(
                 get: { onkyo.inputCode },
                 set: { onkyo.setInput($0) }
             )) {
@@ -187,10 +202,34 @@ struct MenuView: View {
             .pickerStyle(.menu)
             .labelsHidden()
             .fixedSize()
+    }
+
+    @Environment(\.isScreenshotting) private var isScreenshotting
+
+    @ViewBuilder
+    private var settingsMenu: some View {
+        if isScreenshotting {
+            Image(systemName: "ellipsis.circle")
+                .foregroundStyle(.secondary)
+        } else {
+            realSettingsMenu
         }
     }
 
-    private var settingsMenu: some View {
+    /// Static popup-button look-alike used only in rendered screenshots
+    /// (real menus are AppKit-backed and can't render offscreen).
+    private func fakePopup(_ text: String) -> some View {
+        HStack(spacing: 6) {
+            Text(text)
+            Image(systemName: "chevron.up.chevron.down")
+                .imageScale(.small)
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 4)
+        .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(.quaternary))
+    }
+
+    private var realSettingsMenu: some View {
         Menu {
             Toggle("Start at Login", isOn: Binding(
                 get: { onkyo.launchAtLogin },

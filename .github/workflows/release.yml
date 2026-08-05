@@ -41,4 +41,4 @@ jobs:
           files: |
             dist/OnkyoMac.dmg
             dist/OnkyoMac.zip
-          generate_release_notes: true
+          body_path: RELEASE_NOTES.md

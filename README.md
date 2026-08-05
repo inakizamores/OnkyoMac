@@ -6,13 +6,20 @@
 
 **Onkyo receiver control that feels built into macOS.**
 
-A tiny native menu bar app for your Onkyo AV receiver — power, volume, inputs, HDMI output routing, sound modes and now playing, styled like Control Center. No cloud, no account, no Electron. One tiny binary.
+A tiny native menu bar app for your Onkyo AV receiver — power, volume, inputs, HDMI
+output routing, sound modes and live now-playing, styled like Control Center. No cloud,
+no account, no Electron. One sub-megabyte binary talking straight to the receiver.
 
-[![Latest release](https://img.shields.io/github/v/release/inakizamores/OnkyoMac?label=Download&color=blue)](https://github.com/inakizamores/OnkyoMac/releases/latest)
+[![Download](https://img.shields.io/github/v/release/inakizamores/OnkyoMac?label=Download&color=blue)](https://github.com/inakizamores/OnkyoMac/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/inakizamores/OnkyoMac/total?color=blue)](https://github.com/inakizamores/OnkyoMac/releases)
 [![macOS 14+](https://img.shields.io/badge/macOS-14%2B-black)](#requirements)
 [![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-native-black)](#requirements)
-[![Swift](https://img.shields.io/badge/Swift-SwiftUI-orange)](Sources/OnkyoMac)
+[![SwiftUI](https://img.shields.io/badge/Swift-SwiftUI%2C%20zero%20dependencies-orange)](Sources/OnkyoMac)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+
+<br>
+
+<img src="docs/screenshot-panel.png" width="380" alt="OnkyoMac panel: power, volume bar, now playing with album art, input, output and sound mode pickers">
 
 </div>
 
@@ -20,51 +27,105 @@ A tiny native menu bar app for your Onkyo AV receiver — power, volume, inputs,
 
 ## Install
 
-**[⬇ Download OnkyoMac.dmg](https://github.com/inakizamores/OnkyoMac/releases/latest/download/OnkyoMac.dmg)** — open it, drag OnkyoMac into Applications, launch it.
+**[⬇ Download OnkyoMac.dmg](https://github.com/inakizamores/OnkyoMac/releases/latest/download/OnkyoMac.dmg)**, open it, drag **OnkyoMac** onto **Applications**, and launch it from there. The receiver icon appears in your menu bar.
 
-> **First launch:** OnkyoMac is open source and not notarized by Apple (no paid developer account), so macOS will show *"Apple could not verify OnkyoMac"*. Open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** — needed exactly once.
-
-Prefer to skip that dialog? This one-liner downloads, installs and launches it directly:
+Prefer the Terminal? This installs and launches it in one line, no dialogs:
 
 ```bash
 curl -fsSL -o /tmp/OnkyoMac.zip https://github.com/inakizamores/OnkyoMac/releases/latest/download/OnkyoMac.zip && ditto -xk /tmp/OnkyoMac.zip /Applications && xattr -dr com.apple.quarantine /Applications/OnkyoMac.app && open /Applications/OnkyoMac.app
 ```
 
-When macOS asks for **Local Network** access, click **Allow** — that's how OnkyoMac finds your receiver. That's the entire setup.
+### First launch — telling macOS to trust the app
+
+OnkyoMac is open source and **not notarized by Apple** (notarization requires a paid
+Apple Developer subscription). macOS therefore warns you once. This is expected — here's
+the official Apple flow to approve it:
+
+1. Double-click **OnkyoMac** in Applications. macOS shows *"Apple could not verify
+   OnkyoMac is free of malware"* — click **Done** (not *Move to Trash*).
+2. Open **System Settings → Privacy & Security**.
+3. Scroll down to the Security section — you'll see *"OnkyoMac was blocked to protect
+   your Mac"*. Click **Open Anyway**.
+4. Confirm with your password or Touch ID. macOS remembers the decision permanently.
+
+Skeptical? Good instinct. The entire app is in this repository — you can read every line
+and [build it yourself](#build-from-source) in under a minute.
+
+### Local Network permission
+
+On first open of the panel, macOS asks for **Local Network** access. Click **Allow** —
+that's how OnkyoMac discovers and controls the receiver. That's the entire setup.
 
 ## Features
 
-- ⚡ **Power** — turn the receiver on and off from the menu bar (works from network standby)
-- 🎚️ **Volume & mute** — Control-Center-style capsule slider, mute on the speaker glyph
-- 🎛️ **Input selection** — TV, BD/DVD, CBL/SAT, Game, PC, CD, Bluetooth, Network, USB, AUX, FM, AM
-- 📺 **HDMI output routing** — switch between Main, Sub, or Main + Sub outputs (TV vs. projector)
-- 🎵 **Now Playing** — title, artist, album art and live progress for Network/Bluetooth/USB sources, with play/pause/skip
-- 🔊 **Sound modes** — Stereo, Direct, All Ch Stereo, Full Mono, Dolby Surround, DTS Neural:X
-- 🖱️ **Swipe to adjust** — scroll horizontally on the volume bar for smooth, damped changes that can't accidentally jump the level
-- ℹ️ **Format readout** — a subtle line showing the incoming codec, active sound mode and output channels
-- 🚀 **Start at Login** — lives quietly in the menu bar, ready before you are
+- ⚡ **Power** — on and off from the menu bar; works from network standby, and the app
+  re-reads everything across the receiver's boot window so levels are always true
+- 🎚️ **Volume & mute** — Control-Center-style capsule bar; click the speaker glyph to
+  mute, and the glyph's waves track the level
+- 🎛️ **Inputs, by their real names** — the picker asks the receiver for its own input
+  list, so it shows exactly what the front panel shows (STRM BOX, BD/DVD, custom
+  renames…), on any model
+- 📺 **HDMI output routing** — Main / Sub / Main + Sub, for TV-vs-projector setups
+- 🎵 **Now Playing** — title, artist, album art and live progress for Network, Bluetooth
+  and USB sources, with play/pause/skip; updates are pushed by the receiver in real time
+- 🔊 **Sound modes** — Stereo, Direct, All Ch Stereo, Theater-Dimensional, Full Mono,
+  Dolby Surround, DTS Neural:X
+- ℹ️ **Format readout** — a subtle line showing what's actually happening:
+  incoming codec → active sound mode → output channels
+- 🚀 **Start at Login** — always ready, never in your Dock
+- ⚡ **Instant panel** — renders fully populated from last-known state the moment it
+  opens; fresh values glide in behind
 
-## Design
+## Everyday use
 
-OnkyoMac is built to disappear into macOS:
+| Gesture | Effect |
+|---|---|
+| Click menu bar icon | Open the panel |
+| Power button | Receiver on / off (network standby) |
+| Drag the volume bar | Set level (tracks 1:1) |
+| Two-finger swipe on the bar | Nudge level — damped so it can never jump |
+| Click the speaker glyph | Mute / unmute |
+| Input / Output / Sound Mode | Native pickers, applied instantly |
+| ⋯ menu | Start at Login · Rescan Network · Quit |
 
-- **Native everywhere** — SwiftUI `MenuBarExtra`, system panel chrome, SF Symbols, system materials and semantic colors. Dark mode, accent colors and accessibility settings just work.
-- **Real-time, zero polling** — speaks eISCP (Integra Serial Control Protocol) over TCP; the receiver *pushes* every state change, so turning the volume knob on the unit moves the slider live.
-- **Light for real** — single arm64 binary, idle at 0% CPU. It connects only while the panel is open; closed, it does nothing at all.
-- **Local only** — talks directly to the receiver on port 60128. Nothing ever leaves your network. No analytics, no accounts, no telemetry.
-- **Instant** — the receiver's address is cached after first discovery; reconnecting is immediate, UDP broadcast discovery is the fallback.
+## How it works
+
+- Speaks **eISCP** (Integra Serial Control Protocol) over TCP port 60128 — the same
+  protocol Onkyo/Integra ship for professional control systems
+- The receiver **pushes** every state change to the app, so turning the physical volume
+  knob moves the bar live — there is no polling at all
+- Discovery by UDP broadcast, with the receiver's address cached for instant reconnects
+- Connects only while the panel is open; closed, the app does nothing
+- Pure Swift + SwiftUI `MenuBarExtra`. Zero third-party dependencies. Single arm64 binary.
+
+## Privacy
+
+Everything stays on your LAN. OnkyoMac connects to nothing but the receiver. No
+analytics, no telemetry, no accounts.
 
 ## Requirements
 
-- macOS 14 Sonoma or later (Apple Silicon)
-- A network-connected Onkyo (or Integra / recent Pioneer) receiver that speaks eISCP
+- macOS 14 Sonoma or later, Apple Silicon
+- A network-connected **Onkyo / Integra** receiver speaking eISCP (most models since
+  ~2011; recent **Pioneer** AVRs speak it too). Developed and tested against an Onkyo
+  HT-R695 — controls a given model doesn't support are simply ignored by it
 - **Network Standby** enabled on the receiver if you want power-on to work while it's off
+  (Setup → Hardware → Network → Network Standby)
 
-Developed and tested against an Onkyo HT-R695; the eISCP command set is shared across most Onkyo/Integra models (and Pioneer models from 2016 on), so others should work — controls the receiver doesn't support are simply ignored by it.
+## Troubleshooting
+
+- **No receiver found** — confirm the receiver has network standby on and is on the same
+  network, check **System Settings → Privacy & Security → Local Network** has OnkyoMac
+  enabled, then **⋯ → Rescan Network**.
+- **Input names look generic** — **Rescan Network** re-fetches the receiver's own input
+  list (also picks up renames).
+- **Power-on does nothing** — enable Network Standby on the receiver; without it the
+  receiver's network port sleeps when the unit is off.
 
 ## Build from source
 
-Only Xcode Command Line Tools needed (`xcode-select --install`):
+Only Xcode Command Line Tools required (`xcode-select --install`) — no Xcode, no
+dependencies:
 
 ```bash
 git clone https://github.com/inakizamores/OnkyoMac.git
@@ -72,7 +133,16 @@ cd OnkyoMac
 ./build.sh --install
 ```
 
-`./build.sh` builds `build/OnkyoMac.app`; `--install` also copies it to /Applications and launches it. `./release.sh` produces the distributable `.dmg` and `.zip`. Releases are built automatically by GitHub Actions when a `v*` tag is pushed.
+`./build.sh` produces `build/OnkyoMac.app`; `--install` copies it to /Applications and
+launches it. `./release.sh` builds the distributable DMG and zip. Tagged `v*` pushes are
+built and published automatically by GitHub Actions on macOS 26 runners (the workflow
+refuses to ship a build linked against an older SDK, which would render with legacy
+window chrome).
+
+## Sibling project
+
+Control a Sonos system the same way: **[SonoMac](https://github.com/inakizamores/SonoMac)** —
+same design, same philosophy, Sonos's local UPnP protocol.
 
 ## License
 
