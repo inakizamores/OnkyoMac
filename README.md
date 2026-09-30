@@ -147,3 +147,5 @@ same design, same philosophy, Sonos's local UPnP protocol.
 ## License
 
 [MIT](LICENSE) — do whatever you like with it.
+
+Issues and pull requests are welcome.
