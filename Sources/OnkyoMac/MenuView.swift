@@ -25,8 +25,9 @@ struct MenuView: View {
                 )
                 .disabled(!onkyo.powerOn)
                 .opacity(onkyo.powerOn ? 1 : 0.4)
-                if onkyo.powerOn && onkyo.hasTransport && !onkyo.trackTitle.isEmpty {
+                if showsNowPlaying {
                     nowPlaying
+                        .transition(.panelRow)
                 }
                 Group {
                     inputRow
@@ -41,25 +42,37 @@ struct MenuView: View {
                 }
                 .disabled(!onkyo.powerOn)
                 .opacity(onkyo.powerOn ? 1 : 0.4)
-                if onkyo.powerOn && !onkyo.audioInfo.isEmpty {
+                if showsAudioInfo {
                     Text(onkyo.audioInfo)
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                         .lineLimit(1)
                         .frame(maxWidth: .infinity)
+                        .transition(.panelRow)
                 }
             } else {
                 disconnectedState
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
+                    .transition(.panelRow)
             }
         }
         .padding(.horizontal, 16)
         .padding(.top, 14)
         .padding(.bottom, 14)
         .frame(width: 320)
+        .animation(.panel, value: "\(showControls)\(showsNowPlaying)\(showsAudioInfo)")
+        .modifier(PanelSizer())
         .onAppear { onkyo.menuOpened() }
         .onDisappear { onkyo.menuClosed() }
+    }
+
+    private var showsNowPlaying: Bool {
+        onkyo.powerOn && onkyo.hasTransport && !onkyo.trackTitle.isEmpty
+    }
+
+    private var showsAudioInfo: Bool {
+        onkyo.powerOn && !onkyo.audioInfo.isEmpty
     }
 
     private var header: some View {
